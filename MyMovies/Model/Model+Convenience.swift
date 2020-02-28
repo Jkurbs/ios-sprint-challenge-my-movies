@@ -23,12 +23,12 @@ extension Movie {
         self.hasWatched = hasWatched
     }
     
-    @discardableResult convenience init?(taskRepresentation: MovieRepresentation,
+    @discardableResult convenience init?(movieRepresentation: MovieRepresentation,
                                          context: NSManagedObjectContext = CoreDataStack.shared.mainContext) {
-        guard let identifierString = taskRepresentation.identifier?.uuidString, let identifier = UUID(uuidString: identifierString) else {
+        guard let identifierString = movieRepresentation.identifier?.uuidString, let identifier = UUID(uuidString: identifierString) else {
                 return nil
         }
         
-        self.init(title: taskRepresentation.title, identifier: identifier, hasWatched: false, context: context)
+        self.init(title: movieRepresentation.title, identifier: identifier, hasWatched: false, context: context)
     }
 }
