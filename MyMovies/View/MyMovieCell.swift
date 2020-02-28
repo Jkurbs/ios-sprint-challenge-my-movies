@@ -25,9 +25,10 @@ class MyMovieCell: UITableViewCell {
     }
     
     @IBAction func watchedToggle(_ sender: UIButton) {
-        movie!.hasWatched.toggle()
-        let watched = movie?.hasWatched != movie?.hasWatched
-        watched ? sender.setTitle("Unwatched", for: .normal) : sender.setTitle("Watched", for: .normal)
+        movie?.hasWatched.toggle()
+        
+        guard let movie = movie else { return }
+        movie.hasWatched ? sender.setTitle("Unwatched", for: .normal) : sender.setTitle("Watched", for: .normal)
         do {
             try CoreDataStack.shared.save()
         } catch {

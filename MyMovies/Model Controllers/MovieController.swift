@@ -219,6 +219,6 @@ class MovieController {
     
     private func update(movie: Movie, with representation: MovieRepresentation) {
         movie.title = representation.title
-        movie.hasWatched = representation.hasWatched!
+        movie.hasWatched = representation.hasWatched ?? false
     }
 }

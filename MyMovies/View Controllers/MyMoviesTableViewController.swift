@@ -44,7 +44,15 @@ class MyMoviesTableViewController: UITableViewController {
         guard let sectionInfo = fetchedResultsController.sections?[section] else {
             return nil
         }
-        return sectionInfo.name.capitalized
+        
+        let movie = sectionInfo.objects?[0] as? Movie // The first object in this section
+        let type = movie?.hasWatched
+        
+        if type == false {
+            return "Not watched"
+        } else {
+             return "Watched"
+        }
     }
     
     func results(for section: Int) -> NSFetchedResultsSectionInfo? {
@@ -58,7 +66,6 @@ class MyMoviesTableViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            
             let movie = fetchedResultsController.object(at: indexPath)
             movieController.deleteMovieFromServer(movie: movie)
             DispatchQueue.main.async {
