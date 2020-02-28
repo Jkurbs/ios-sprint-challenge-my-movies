@@ -10,6 +10,7 @@ import Foundation
 
 enum HttpMethods: String {
     case PUT
+    case DELETE
 }
 
 enum Urls: CustomStringConvertible {

@@ -40,6 +40,13 @@ class MyMoviesTableViewController: UITableViewController {
         return cell
     }
     
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        guard let sectionInfo = fetchedResultsController.sections?[section] else {
+            return nil
+        }
+        return sectionInfo.name.capitalized
+    }
+    
     func results(for section: Int) -> NSFetchedResultsSectionInfo? {
         guard let info = fetchedResultsController.sections?[section] else { return nil }
         return info
@@ -48,10 +55,21 @@ class MyMoviesTableViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         return true
     }
-
+    
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            tableView.deleteRows(at: [indexPath], with: .fade)
+            
+            let movie = fetchedResultsController.object(at: indexPath)
+            movieController.deleteMovieFromServer(movie: movie)
+            DispatchQueue.main.async {
+                CoreDataStack.shared.mainContext.delete(movie)
+                do {
+                    try CoreDataStack.shared.save()
+                } catch {
+                    CoreDataStack.shared.mainContext.reset()
+                    NSLog("Error saving managed object context: \(error)")
+                }
+            }
         }
     }
 }

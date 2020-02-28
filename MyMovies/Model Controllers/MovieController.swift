@@ -20,14 +20,14 @@ class MovieController {
     // MARK: - Properties
     
     var searchedMovies: [MovieRepresentation] = []
-   
+    
     private let movieUrl = URL(string: Urls.movieUrl.description)!
     private let firebaseUrl = URL(string: Urls.firebaseUrl.description)!
-
+    
     init() {
         getMoviesFromServer()
     }
-
+    
     func searchForMovie(with searchTerm: String, completion: @escaping (Error?) -> Void) {
         
         var components = URLComponents(url: movieUrl, resolvingAgainstBaseURL: true)
@@ -113,7 +113,6 @@ class MovieController {
             
             do {
                 let movieRepresenations = Array(try JSONDecoder().decode([String : MovieRepresentation].self, from: data).values)
-                print(movieRepresenations)
                 try self.updateMovies(with: movieRepresenations)
                 completion(nil)
             } catch {
@@ -123,10 +122,57 @@ class MovieController {
         }.resume()
     }
     
-    func urlSesion(with request: URLRequest, completion: @escaping CompletionHandler) {
-        URLSession.shared.dataTask(with: request) { _, _, error in
+    
+    func updateWatched(movie: Movie, completion: @escaping CompletionHandler = { _ in }) {
+        let uuid = movie.identifier!
+        let requestURL = firebaseUrl.appendingPathComponent(uuid.uuidString).appendingPathExtension("json")
+        var request = URLRequest(url: requestURL)
+        request.httpMethod = HttpMethods.PUT.rawValue
+        request.setValue("true", forHTTPHeaderField: "hasWatched")
+        do {
+            guard let representation = movie.movieRepresentation else {
+                completion(NSError())
+                return
+            }
+            try CoreDataStack.shared.save()
+            request.httpBody = try JSONEncoder().encode(representation)
+        } catch {
+            NSLog("Error encoding task: \(error)")
+            completion(error)
+            return
+        }
+        
+        urlSesion(with: request) { (error) in
             if let error = error {
-                NSLog("Error PUTting task to server: \(error)")
+                completion(error)
+                return
+            }
+            completion(nil)
+        }
+    }
+    
+    func deleteMovieFromServer(movie: Movie, completion: @escaping CompletionHandler = { _ in }) {
+        
+        guard let uuid = movie.identifier else {
+            completion(NSError())
+            return
+        }
+        
+        let requestURL = firebaseUrl.appendingPathComponent(uuid.uuidString).appendingPathExtension("json")
+        var request = URLRequest(url: requestURL)
+        request.httpMethod = HttpMethods.DELETE.rawValue
+        urlSesion(with: request) { (error) in
+            if let error = error {
+                completion(error)
+                return
+            }
+        }
+    }
+    
+    func urlSesion(with request: URLRequest, completion: @escaping CompletionHandler) {
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            if let error = error {
+                NSLog("Error: \(error)")
                 completion(error)
                 return
             }
@@ -135,13 +181,15 @@ class MovieController {
         }.resume()
     }
     
+    
+    
     // MARK: - Private
     
     private func updateMovies(with representations: [MovieRepresentation]) throws {
         let tasksWithID = representations.filter { $0.identifier != nil }
         let identifiersToFetch = tasksWithID.compactMap { $0.identifier }
         let representationsByID = Dictionary(uniqueKeysWithValues: zip(identifiersToFetch, tasksWithID))
-        var tasksToCreate = representationsByID
+        var moviesToCreate = representationsByID
         
         let fetchRequest: NSFetchRequest<Movie> = Movie.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "identifier IN %@", identifiersToFetch)
@@ -155,10 +203,10 @@ class MovieController {
                 for movie in existingTasks {
                     guard let id = movie.identifier, let representation = representationsByID[id] else { continue }
                     self.update(movie: movie, with: representation)
-                    tasksToCreate.removeValue(forKey: id)
+                    moviesToCreate.removeValue(forKey: id)
                 }
                 
-                for representation in tasksToCreate.values {
+                for representation in moviesToCreate.values {
                     Movie(movieRepresentation: representation, context: context)
                 }
             } catch {
@@ -171,6 +219,6 @@ class MovieController {
     
     private func update(movie: Movie, with representation: MovieRepresentation) {
         movie.title = representation.title
-        movie.hasWatched = representation.hasWatched ?? false
+        movie.hasWatched = representation.hasWatched!
     }
 }
