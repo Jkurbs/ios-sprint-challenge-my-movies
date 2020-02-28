@@ -12,13 +12,17 @@ class MovieController {
     
     private let apiKey = "4cc920dab8b729a619647ccc4d191d5e"
     private let baseURL = URL(string: "https://api.themoviedb.org/3/search/movie")!
+    private let firebaseURL = URL(string: "https://sprint-9a616.firebaseio.com/")
+    
+    // MARK: - Properties
+    
+    var searchedMovies: [MovieRepresentation] = []
     
     func searchForMovie(with searchTerm: String, completion: @escaping (Error?) -> Void) {
         
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)
         
-        let queryParameters = ["query": searchTerm,
-                               "api_key": apiKey]
+        let queryParameters = ["query": searchTerm, "api_key": apiKey]
         
         components?.queryItems = queryParameters.map({URLQueryItem(name: $0.key, value: $0.value)})
         
@@ -40,7 +44,6 @@ class MovieController {
                 completion(NSError())
                 return
             }
-            
             do {
                 let movieRepresentations = try JSONDecoder().decode(MovieRepresentations.self, from: data).results
                 self.searchedMovies = movieRepresentations
@@ -51,8 +54,4 @@ class MovieController {
             }
         }.resume()
     }
-    
-    // MARK: - Properties
-    
-    var searchedMovies: [MovieRepresentation] = []
 }
