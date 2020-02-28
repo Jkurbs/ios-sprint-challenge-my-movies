@@ -9,7 +9,6 @@
 import Foundation
 import CoreData
 
-
 extension Movie {
     
     var movieRepresentation: MovieRepresentation? {

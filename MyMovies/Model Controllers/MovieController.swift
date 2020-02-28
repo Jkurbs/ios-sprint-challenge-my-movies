@@ -8,11 +8,18 @@
 
 import Foundation
 
+enum HttpMethods: String {
+    case PUT
+}
+
 class MovieController {
     
     private let apiKey = "4cc920dab8b729a619647ccc4d191d5e"
     private let baseURL = URL(string: "https://api.themoviedb.org/3/search/movie")!
-    private let firebaseURL = URL(string: "https://sprint-9a616.firebaseio.com/")
+    private let firebaseURL = URL(string: "https://sprint-9a616.firebaseio.com/")!
+    
+    typealias CompletionHandler = (Error?) -> Void
+    
     
     // MARK: - Properties
     
@@ -52,6 +59,47 @@ class MovieController {
                 NSLog("Error decoding JSON data: \(error)")
                 completion(error)
             }
+        }.resume()
+    }
+    
+    func sendMovieToServer(movie: Movie, completion: @escaping CompletionHandler = { _ in }) {
+        let uuid = movie.identifier!
+        print(uuid)
+        let requestURL = firebaseURL.appendingPathComponent(uuid.uuidString).appendingPathExtension("json")
+        var request = URLRequest(url: requestURL)
+        request.httpMethod = HttpMethods.PUT.rawValue
+        
+        do {
+            guard let representation = movie.movieRepresentation else {
+                completion(NSError())
+                return
+            }
+            try CoreDataStack.shared.save()
+            request.httpBody = try JSONEncoder().encode(representation)
+        } catch {
+            NSLog("Error encoding task: \(error)")
+            completion(error)
+            return
+        }
+        
+        urlSesion(with: request) { (error) in
+            if let error = error {
+                completion(error)
+                return
+            }
+            completion(nil)
+        }
+    }
+    
+    func urlSesion(with request: URLRequest, completion: @escaping CompletionHandler) {
+        URLSession.shared.dataTask(with: request) { _, _, error in
+            if let error = error {
+                NSLog("Error PUTting task to server: \(error)")
+                completion(error)
+                return
+            }
+            
+            completion(nil)
         }.resume()
     }
 }

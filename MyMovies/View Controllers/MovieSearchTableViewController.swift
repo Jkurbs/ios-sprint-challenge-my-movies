@@ -9,7 +9,13 @@
 import UIKit
 
 class MovieSearchTableViewController: UITableViewController, UISearchBarDelegate {
-
+    
+    
+    // MARK: - Properties
+    
+    @IBOutlet weak var searchBar: UISearchBar!
+    var movieController = MovieController()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -41,7 +47,13 @@ class MovieSearchTableViewController: UITableViewController, UISearchBarDelegate
         return cell
     }
     
-    var movieController = MovieController()
-    
-    @IBOutlet weak var searchBar: UISearchBar!
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let movieRepresentation = movieController.searchedMovies[indexPath.row]
+        let movie = Movie(title: movieRepresentation.title, identifier: movieRepresentation.identifier ?? UUID(), hasWatched: false)
+        movieController.sendMovieToServer(movie: movie) { (error) in
+            if let error = error {
+                NSLog("An error occured: \(error)")
+            }
+        }
+    }
 }
